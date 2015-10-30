@@ -18,6 +18,8 @@ def create_directory(path):
 def create_empty_directory(path):
     if os.path.exists(path):
         shutil.rmtree(path)
+        # print "folder exist"
+    else:
     os.makedirs(path)
 
 def json_dict_for_file_path(file_path):
@@ -40,6 +42,10 @@ class AssetGroup(object):
         self.assets = []
 
     @property
+    def appiconset_directory(self):
+        appiconset_name = self.name + ".appiconset"
+        return os.path.join(OUTPUT_DIR, appiconset_name)
+
     def imageset_directory(self):
         imageset_name = self.name + ".imageset"
         return os.path.join(OUTPUT_DIR, imageset_name)
@@ -70,11 +76,25 @@ class Asset(object):
         scale = regex_match.group(2)
         if len(scale) == 0:
             scale = '1x'
+        if scale.startswith('-'):
+            strings = scale.split('@')
+            n = strings[0].strip('-')
+            self.size = n+'x'+n
+            self.scale = strings[1]
+        else:
         self.scale = scale
         self.extension = regex_match.group(3)
 
     @property
     def info(self):
+        if self.group_name.startswith('AppIcon'):
+            return {
+                'idiom': 'iphone',
+                'scale': self.scale,
+                'size': self.size,
+                'filename': self.filename,
+            }
+        else:
         return {
             'idiom': 'universal',
             'scale': self.scale,
@@ -172,6 +192,16 @@ print "Generating imagesets"
 
 for asset_group in asset_groups.values():
     # create the imageset
+    if asset_group.name.startswith( 'AppIcon' ):
+        imageset_directory = os.path.join(OUTPUT_DIR, 'AppIcon.appiconset')
+        create_empty_directory(imageset_directory)
+        # place the assets in the imageset
+        for asset in asset_group.assets:
+            shutil.move(asset.path, imageset_directory)
+        # write the imageset info
+        imageset_info_file_path = os.path.join(imageset_directory, 'Contents.json')
+        write_dict_to_file_path(imageset_info_file_path, asset_group.info)
+    else:
     imageset_directory = os.path.join(OUTPUT_DIR, asset_group.name + '.imageset')
     create_empty_directory(imageset_directory)
     # place the assets in the imageset
