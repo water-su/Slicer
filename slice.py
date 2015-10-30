@@ -80,7 +80,10 @@ class Asset(object):
             strings = scale.split('@')
             n = strings[0].strip('-')
             self.size = n+'x'+n
+            if len(strings) > 1:
             self.scale = strings[1]
+        else:
+                self.scale = '1x'
         else:
         self.scale = scale
         self.extension = regex_match.group(3)
